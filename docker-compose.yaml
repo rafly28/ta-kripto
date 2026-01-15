@@ -1,0 +1,28 @@
+services:
+    php:
+      image: docker.io/rafly28/fly-dev:1.2
+      container_name: laravel
+      ports:
+       - "8080:80"
+      volumes:
+       - /home/rafly/Documents/project/kripto:/var/www/html
+      networks:
+        default:
+         ipv4_address: 10.89.0.5
+    db:
+      image: docker.io/library/mysql:8.4
+      container_name: mysql
+      ports:
+       - "3306:3306"
+      volumes:
+        - /home/rafly/file_sampis/ta:/var/lib/mysql
+      environment:
+        - MYSQL_ROOT_PASSWORD=kripto123
+        - MYSQL_DATABASE=kripto
+      networks:
+        default:
+         ipv4_address: 10.89.0.6
+networks:
+    default:
+        name: sis-fe
+        external: true
