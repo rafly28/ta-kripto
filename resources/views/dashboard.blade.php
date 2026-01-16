@@ -6,90 +6,119 @@
             <div class="mb-6">
                 <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-6 text-white">
                     <h1 class="text-2xl font-bold mb-1">Welcome back, {{ Auth::user()->name }}!</h1>
-                    <p class="text-blue-100 text-sm">Encryption Performance Monitoring Dashboard</p>
+                    <p class="text-blue-100 text-sm">Secure File Encryption System</p>
                 </div>
             </div>
 
             <!-- KPI Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <!-- Total Files -->
                 <div class="bg-white rounded-lg shadow p-5 border-l-4 border-blue-500">
-                    <p class="text-gray-600 text-xs font-medium uppercase">Total Files</p>
+                    <p class="text-gray-600 text-xs font-medium uppercase">
+                        @if(Auth::user()->isAdmin())
+                            Files Uploaded
+                        @else
+                            Files Assigned
+                        @endif
+                    </p>
                     <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalPayrolls ?? 0 }}</p>
                 </div>
 
-                <!-- Avg Encryption Time -->
+                <!-- Total Employees / Total Files in System -->
                 <div class="bg-white rounded-lg shadow p-5 border-l-4 border-green-500">
-                    <p class="text-gray-600 text-xs font-medium uppercase">Avg Encryption Time</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ round($avgWaktuEnkripsi ?? 0, 2) }}<span class="text-sm font-normal"> ms</span></p>
+                    <p class="text-gray-600 text-xs font-medium uppercase">
+                        @if(Auth::user()->isAdmin())
+                            Total Employees
+                        @else
+                            Employees
+                        @endif
+                    </p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalEmployees ?? 0 }}</p>
                 </div>
 
-                <!-- Total Data Size -->
+                <!-- Total Files in System (Admin only) -->
+                @if(Auth::user()->isAdmin())
                 <div class="bg-white rounded-lg shadow p-5 border-l-4 border-purple-500">
-                    <p class="text-gray-600 text-xs font-medium uppercase">Total Size</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ round(($totalSizeAsli ?? 0) / 1024 / 1024, 2) }}<span class="text-sm font-normal"> MB</span></p>
+                    <p class="text-gray-600 text-xs font-medium uppercase">Total in System</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalUserFiles ?? 0 }}</p>
                 </div>
-
-                <!-- Min Encryption Time -->
-                <div class="bg-white rounded-lg shadow p-5 border-l-4 border-yellow-500">
-                    <p class="text-gray-600 text-xs font-medium uppercase">Min Time</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ round($minWaktuEnkripsi ?? 0, 2) }}<span class="text-sm font-normal"> ms</span></p>
-                </div>
-
-                <!-- Max Encryption Time -->
-                <div class="bg-white rounded-lg shadow p-5 border-l-4 border-red-500">
-                    <p class="text-gray-600 text-xs font-medium uppercase">Max Time</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ round($maxWaktuEnkripsi ?? 0, 2) }}<span class="text-sm font-normal"> ms</span></p>
-                </div>
+                @else
+                <!-- Available Actions (User) -->
+                <!-- <div class="bg-white rounded-lg shadow p-5 border-l-4 border-indigo-500">
+                    <p class="text-gray-600 text-xs font-medium uppercase">Status</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">Active</p>
+                </div> -->
+                @endif
             </div>
 
-            <!-- Encryption Time Chart -->
-            <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Encryption Time Analysis</h3>
-                <canvas id="encryptionChart" style="max-height: 300px;"></canvas>
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Admin Actions -->
+                @if(Auth::user()->isAdmin())
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">⚙️ Admin Actions</h3>
+                    <div class="space-y-3">
+                        <a href="{{ route('payroll.upload') }}" class="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
+                            📤 Upload New File
+                        </a>
+                        <a href="{{ route('admin.analytics') }}" class="block bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
+                            📊 View Analytics
+                        </a>
+                    </div>
+                </div>
+                @endif
+
+                <!-- User Actions -->
+                @if(Auth::user()->isUser() || Auth::user()->isAdmin())
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📁 My Files</h3>
+                    <div class="space-y-3">
+                        <a href="{{ route('payroll.decrypt') }}" class="block bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
+                            🔓 Decrypt File
+                        </a>
+                        <a href="{{ route('payroll.my-files') }}" class="block bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
+                            📋 My Payroll Files
+                        </a>
+                    </div>
+                </div>
+                @endif
             </div>
 
-            <!-- Data Table -->
-            <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Encryption Data Log</h3>
-                    <a href="{{ route('dashboard.export') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                        📥 Export CSV
-                    </a>
-                </div>
+            <!-- Recent Files Table -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    @if(Auth::user()->isAdmin())
+                        📑 Files I Uploaded
+                    @else
+                        📑 My Files
+                    @endif
+                </h3>
                 
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 border-b">
                             <tr>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-900">Employee</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-900">Original Size</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-900">Encrypted Size</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-900">Employee Name</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-900">File Size</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-900">Encryption Time</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-900">Overhead %</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-900">Created At</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
                             @forelse($dataTable ?? [] as $payroll)
-                                @php
-                                    $overhead = $payroll->ukuran_asli > 0 ? (($payroll->ukuran_enkripsi - $payroll->ukuran_asli) / $payroll->ukuran_asli) * 100 : 0;
-                                @endphp
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3 text-gray-900 font-medium">{{ $payroll->employee_name }}</td>
                                     <td class="px-4 py-3 text-gray-600">{{ round($payroll->ukuran_asli / 1024 / 1024, 2) }} MB</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ round($payroll->ukuran_enkripsi / 1024 / 1024, 2) }} MB</td>
-                                    <td class="px-4 py-3 text-gray-600"><strong>{{ round($payroll->waktu_enkripsi, 2) }}</strong> ms</td>
-                                    <td class="px-4 py-3">
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {{ round($overhead, 2) }}%
+                                    <td class="px-4 py-3 text-gray-600">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            {{ round($payroll->waktu_enkripsi, 2) }} ms
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-600 text-xs">{{ $payroll->created_at->format('Y-m-d H:i:s') }}</td>
+                                    <td class="px-4 py-3 text-gray-600 text-xs">{{ $payroll->created_at->format('M d, Y H:i') }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-3 text-center text-gray-500">Belum ada data payroll</td>
+                                    <td colspan="4" class="px-4 py-3 text-center text-gray-500">No files yet</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -99,43 +128,4 @@
 
         </div>
     </div>
-
-    <!-- Chart JS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script>
-        @if(isset($chartLabels) && count($chartLabels) > 0)
-        const ctx = document.getElementById('encryptionChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {!! json_encode($chartLabels) !!},
-                datasets: [{
-                    label: 'Encryption Time (ms)',
-                    data: {!! json_encode($chartData ?? []) !!},
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#3b82f6',
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: true }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        title: { display: true, text: 'Time (ms)' }
-                    }
-                }
-            }
-        });
-        @endif
-    </script>
 </x-app-layout>
