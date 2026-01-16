@@ -35,17 +35,24 @@
 
                 <!-- ADMIN ONLY MENU -->
                 @if(Auth::user()->isAdmin())
-                    <!-- Admin Divider -->
                     <div class="pt-4 mt-4 border-t border-blue-600">
                         <p :class="{'block': open, 'hidden': !open}" class="text-blue-300 text-xs font-semibold uppercase px-4 mb-3">Admin Functions</p>
                     </div>
+
+                    <!-- Employee Management -->
+                    <a href="{{ route('employee.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('employee.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
+                        <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM15 20H9m6 0h.01"></path>
+                        </svg>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Manage Employees</span>
+                    </a>
 
                     <!-- Upload Payroll -->
                     <a href="{{ route('payroll.upload') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('payroll.upload') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
                         <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
-                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Upload</span>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Upload Payroll</span>
                     </a>
 
                     <!-- Data Analytics -->
@@ -53,7 +60,35 @@
                         <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
-                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Data Analytics</span>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Analytics</span>
+                    </a>
+                @elseif(Auth::user()->isHR())
+                    <div class="pt-4 mt-4 border-t border-blue-600">
+                        <p :class="{'block': open, 'hidden': !open}" class="text-blue-300 text-xs font-semibold uppercase px-4 mb-3">HR Functions</p>
+                    </div>
+
+                    <!-- Employee Management -->
+                    <a href="{{ route('employee.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('employee.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
+                        <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM15 20H9m6 0h.01"></path>
+                        </svg>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Manage Employees</span>
+                    </a>
+
+                    <!-- Upload Payroll -->
+                    <a href="{{ route('payroll.upload') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('payroll.upload') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
+                        <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Upload Payroll</span>
+                    </a>
+
+                    <!-- HR Analytics -->
+                    <a href="{{ route('hr.analytics') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('hr.analytics') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
+                        <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Analytics</span>
                     </a>
                 @endif
 

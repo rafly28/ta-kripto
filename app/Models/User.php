@@ -22,6 +22,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'telegram_id',
+        'department',
     ];
 
     /**
@@ -50,8 +52,25 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isHR()
+    {
+        return $this->role === 'hr';
+    }
+
+    public function isEmployee()
+    {
+        return $this->role === 'employee';
+    }
+
+    // Alias untuk isEmployee (biar kompatibel dengan kode lama)
     public function isUser()
     {
-        return $this->role === 'user';
+        return $this->role === 'employee';
+    }
+
+    // Relationship dengan Payroll
+    public function payrolls()
+    {
+        return $this->hasMany(Payroll::class);
     }
 }

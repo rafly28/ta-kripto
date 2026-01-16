@@ -20,19 +20,20 @@ class PayrollController extends Controller
 
     public function index()
     {
-        $payrolls = Payroll::latest()->get();
-        return view('payroll.upload', compact('payrolls'));
+        // Get employee list untuk dropdown
+        $employees = \App\Models\Employee::all();
+        return view('payroll.upload', compact('employees'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:10240', // 10MB max
-            'telegram_id' => 'required|string|max:20',
-            'employee_name' => 'required|string|max:100',
+            'employee_id' => 'required|exists:employees,id',
+            'file' => 'required|file|max:10240',
         ]);
 
         try {
+            $employee = \App\Models\Employee::find($request->employee_id);
             $file = $request->file('file');
             $plainContent = file_get_contents($file->getRealPath());
             $password = Str::random(12);
@@ -43,15 +44,14 @@ class PayrollController extends Controller
             $endTime = microtime(true);
             $waktuEnkripsi = ($endTime - $startTime) * 1000;
 
-            $fileName = time() . '_' . str_replace(' ', '_', $request->employee_name) . '.' . $file->getClientOriginalExtension() . '.enc';
+            $fileName = time() . '_' . str_replace(' ', '_', $employee->name) . '.' . $file->getClientOriginalExtension() . '.enc';
             Storage::put('payrolls/' . $fileName, $encryptedContent);
             $ukuranEnkripsi = Storage::size('payrolls/' . $fileName);
 
-            // Create payroll dan assign ke user (admin)
             Payroll::create([
-                'user_id' => auth()->id(), // Assign ke user yang upload
-                'employee_name' => $request->employee_name,
-                'telegram_id' => $request->telegram_id,
+                'user_id' => $employee->user_id, // Assign ke user (employee)
+                'employee_name' => $employee->name,
+                'telegram_id' => $employee->telegram_id,
                 'encrypted_file_path' => 'payrolls/' . $fileName,
                 'dynamic_pass' => hash('sha256', $password),
                 'waktu_enkripsi' => $waktuEnkripsi,
@@ -59,22 +59,11 @@ class PayrollController extends Controller
                 'ukuran_enkripsi' => $ukuranEnkripsi,
             ]);
 
-            $telegramSent = $this->sendToTelegram(
-                $request->telegram_id, 
-                $request->employee_name, 
-                $password, 
-                $fileName
-            );
-            
-            if ($telegramSent) {
-                return back()->with('success', "✅ File berhasil dienkripsi & OTP dikirim ke Telegram!");
-            } else {
-                return back()->with('warning', "✅ File enkripsi OK, tapi Telegram gagal. Check logs!");
-            }
-            
+            $this->sendToTelegram($employee->telegram_id, $employee->name, $password, $fileName);
+
+            return redirect()->route('payroll.upload')->with('success', 'File uploaded successfully!');
         } catch (\Exception $e) {
-            \Log::error('Encryption error', ['error' => $e->getMessage()]);
-            return back()->with('error', 'Error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Upload failed: ' . $e->getMessage());
         }
     }
 
