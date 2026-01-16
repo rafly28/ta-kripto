@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Payroll extends Model
 {
     use HasFactory;
-    protected $table = 'payrolls';
 
     protected $fillable = [
+        'user_id',
         'employee_name',
         'telegram_id',
         'encrypted_file_path',
@@ -20,9 +20,9 @@ class Payroll extends Model
         'ukuran_enkripsi',
     ];
 
-    protected $casts = [
-        'waktu_enkripsi' => 'double',
-        'ukuran_asli' => 'integer',
-        'ukuran_enkripsi' => 'integer',
-    ];
+    // Relationship
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

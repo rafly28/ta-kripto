@@ -27,54 +27,42 @@ class PayrollController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'employee_name' => 'required|string|max:255',
-            'telegram_id'   => 'required|string',
-            'file_slip'     => 'required|file|mimes:pdf,xlsx,docx|max:5000',
+            'file' => 'required|file|max:10240', // 10MB max
+            'telegram_id' => 'required|string|max:20',
+            'employee_name' => 'required|string|max:100',
         ]);
 
         try {
-            $file = $request->file('file_slip');
+            $file = $request->file('file');
             $plainContent = file_get_contents($file->getRealPath());
-            $ukuranAsli = $file->getSize();
-            $dynamicPassword = Str::random(12);
+            $password = Str::random(12);
 
-            \Log::info('File uploaded', [
-                'name' => $file->getClientOriginalName(),
-                'size' => $ukuranAsli,
-                'password' => $dynamicPassword // Remove in production!
-            ]);
-
+            $aes = new AES256Engine();
             $startTime = microtime(true);
-            $encryptedContent = $this->aes->encrypt($plainContent, $dynamicPassword);
+            $encryptedContent = $aes->encrypt($plainContent, $password);
             $endTime = microtime(true);
-            
             $waktuEnkripsi = ($endTime - $startTime) * 1000;
 
-            $fileName = time() . '_' . preg_replace('/[^A-Za-z0-9_.]/', '', $file->getClientOriginalName()) . '.enc';
+            $fileName = time() . '_' . str_replace(' ', '_', $request->employee_name) . '.' . $file->getClientOriginalExtension() . '.enc';
             Storage::put('payrolls/' . $fileName, $encryptedContent);
             $ukuranEnkripsi = Storage::size('payrolls/' . $fileName);
 
-            \Log::info('Encryption completed', [
-                'filename' => $fileName,
-                'duration_ms' => $waktuEnkripsi,
-                'original_size' => $ukuranAsli,
-                'encrypted_size' => $ukuranEnkripsi
+            // Create payroll dan assign ke user (admin)
+            Payroll::create([
+                'user_id' => auth()->id(), // Assign ke user yang upload
+                'employee_name' => $request->employee_name,
+                'telegram_id' => $request->telegram_id,
+                'encrypted_file_path' => 'payrolls/' . $fileName,
+                'dynamic_pass' => hash('sha256', $password),
+                'waktu_enkripsi' => $waktuEnkripsi,
+                'ukuran_asli' => strlen($plainContent),
+                'ukuran_enkripsi' => $ukuranEnkripsi,
             ]);
 
-            Payroll::create([
-                'employee_name'       => $request->employee_name,
-                'telegram_id'         => $request->telegram_id,
-                'encrypted_file_path' => 'payrolls/' . $fileName,
-                'dynamic_pass'        => hash('sha256', $dynamicPassword),
-                'waktu_enkripsi'      => $waktuEnkripsi,
-                'ukuran_asli'         => $ukuranAsli,
-                'ukuran_enkripsi'     => $ukuranEnkripsi,
-            ]);
-            
             $telegramSent = $this->sendToTelegram(
                 $request->telegram_id, 
                 $request->employee_name, 
-                $dynamicPassword, 
+                $password, 
                 $fileName
             );
             
@@ -177,5 +165,15 @@ class PayrollController extends Controller
             \Log::error('Decryption error', ['error' => $e->getMessage()]);
             return back()->with('error', 'Error: ' . $e->getMessage());
         }
+    }
+
+    public function myFiles()
+    {
+        // User hanya bisa lihat file yang di-assign ke dia
+        $payrolls = Payroll::where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return view('payroll.my-files', compact('payrolls'));
     }
 }

@@ -2,13 +2,7 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            <!-- Welcome Section -->
-            <div class="mb-6">
-                <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-6 text-white">
-                    <h1 class="text-2xl font-bold mb-1">Welcome back, {{ Auth::user()->name }}!</h1>
-                    <p class="text-blue-100 text-sm">Encryption Performance Monitoring Dashboard</p>
-                </div>
-            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">📊 Data Analytics</h2>
 
             <!-- KPI Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -43,16 +37,40 @@
                 </div>
             </div>
 
+            <!-- Encryption Overhead Analysis -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">🔐 Encryption Overhead Analysis</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <p class="text-gray-600 text-sm mb-1">Total Original Size</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ round(($totalSizeAsli ?? 0) / 1024 / 1024, 2) }} MB</p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <p class="text-gray-600 text-sm mb-1">Total Encrypted Size</p>
+                        <p class="text-2xl font-bold text-green-600">{{ round(($totalSizeEnkripsi ?? 0) / 1024 / 1024, 2) }} MB</p>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <p class="text-gray-600 text-sm mb-1">Overhead ({{ round($overheadPercent ?? 0, 2) }}%)</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ round(($overheadBytes ?? 0) / 1024, 2) }} KB</p>
+                    </div>
+                </div>
+                <div class="mt-4 p-4 bg-blue-50 rounded border-l-4 border-blue-600">
+                    <p class="text-sm text-blue-900">
+                        <strong>Analisis:</strong> Overhead sebesar {{ round($overheadPercent ?? 0, 2) }}% terdiri dari HMAC (32 bytes) + IV (16 bytes) + PKCS7 Padding. Overhead ini normal untuk enkripsi AES-256-CBC.
+                    </p>
+                </div>
+            </div>
+
             <!-- Encryption Time Chart -->
             <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Encryption Time Analysis</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">⏱️ Encryption Time Analysis</h3>
                 <canvas id="encryptionChart" style="max-height: 300px;"></canvas>
             </div>
 
-            <!-- Data Table -->
+            <!-- Data Table with Export -->
             <div class="bg-white rounded-lg shadow p-6 mb-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Encryption Data Log</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">📑 Complete Encryption Data</h3>
                     <a href="{{ route('dashboard.export') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
                         📥 Export CSV
                     </a>
