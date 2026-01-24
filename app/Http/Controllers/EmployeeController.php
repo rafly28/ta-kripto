@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
@@ -25,12 +26,34 @@ class EmployeeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:employees',
+            'email' => 'required|email|unique:employees',
             'telegram_id' => 'required|string|max:50|unique:employees',
             'department' => 'required|string|max:100',
             'position' => 'required|string|max:100',
         ]);
 
-        Employee::create($validated);
+        $employee = Employee::create($validated);
+
+        // Link or create User account for employee
+        $user = User::where('email', $validated['email'])->first();
+        if (! $user) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => bcrypt('password'), // minta ubah password lewat profile
+                'role' => 'employee',
+                'telegram_id' => $validated['telegram_id'] ?? null,
+                'email_verified_at' => now(),
+            ]);
+        } else {
+            // ensure telegram_id present
+            if (empty($user->telegram_id) && ! empty($validated['telegram_id'])) {
+                $user->update(['telegram_id' => $validated['telegram_id']]);
+            }
+        }
+
+        $employee->user_id = $user->id;
+        $employee->save();
 
         return redirect()->route('employee.index')->with('success', 'Employee added successfully!');
     }
@@ -46,12 +69,50 @@ class EmployeeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:employees,name,' . $employee->id,
+            'email' => 'required|email|unique:employees,email,' . $employee->id,
             'telegram_id' => 'required|string|max:50|unique:employees,telegram_id,' . $employee->id,
             'department' => 'required|string|max:100',
             'position' => 'required|string|max:100',
         ]);
 
         $employee->update($validated);
+
+        // Sync user record
+        $existingUser = User::where('email', $validated['email'])->first();
+
+        if ($existingUser) {
+            // attach existing user
+            $employee->user_id = $existingUser->id;
+            // update telegram if needed
+            if (empty($existingUser->telegram_id) && ! empty($validated['telegram_id'])) {
+                $existingUser->update(['telegram_id' => $validated['telegram_id']]);
+            }
+            $employee->save();
+        } else {
+            // if employee already linked to a user, update that user's email
+            if ($employee->user_id) {
+                $user = User::find($employee->user_id);
+                if ($user) {
+                    $user->update([
+                        'name' => $validated['name'],
+                        'email' => $validated['email'],
+                        'telegram_id' => $validated['telegram_id'] ?? $user->telegram_id,
+                    ]);
+                }
+            } else {
+                // create new user
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => bcrypt('password'),
+                    'role' => 'employee',
+                    'telegram_id' => $validated['telegram_id'] ?? null,
+                    'email_verified_at' => now(),
+                ]);
+                $employee->user_id = $user->id;
+                $employee->save();
+            }
+        }
 
         return redirect()->route('employee.index')->with('success', 'Employee updated successfully!');
     }

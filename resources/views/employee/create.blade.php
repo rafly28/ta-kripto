@@ -2,7 +2,7 @@
     <div class="py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">➕ Add New Employee</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Add New Employee</h2>
 
             <div class="bg-white rounded-lg shadow p-6">
                 <form action="{{ route('employee.store') }}" method="POST">
@@ -37,13 +37,20 @@
                         @error('position') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Email -->
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-semibold text-gray-900 mb-2">Email *</label>
+                        <input type="email" name="email" id="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Example@terakorp.com" value="{{ old('email') }}">
+                        @error('email') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <!-- Buttons -->
                     <div class="flex gap-3">
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition">
-                            ✅ Save Employee
+                            Save Employee
                         </button>
                         <a href="{{ route('employee.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition">
-                            ❌ Cancel
+                            Cancel
                         </a>
                     </div>
                 </form>

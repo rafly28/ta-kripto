@@ -48,8 +48,9 @@ class PayrollController extends Controller
             Storage::put('payrolls/' . $fileName, $encryptedContent);
             $ukuranEnkripsi = Storage::size('payrolls/' . $fileName);
 
-            Payroll::create([
-                'user_id' => $employee->user_id, // Assign ke user (employee)
+            // simpan dan ambil model yang dibuat
+            $created = Payroll::create([
+                'user_id' => $employee->user_id,
                 'employee_name' => $employee->name,
                 'telegram_id' => $employee->telegram_id,
                 'encrypted_file_path' => 'payrolls/' . $fileName,
@@ -57,11 +58,15 @@ class PayrollController extends Controller
                 'waktu_enkripsi' => $waktuEnkripsi,
                 'ukuran_asli' => strlen($plainContent),
                 'ukuran_enkripsi' => $ukuranEnkripsi,
+                'uploader_id' => auth()->id(),
             ]);
 
             $this->sendToTelegram($employee->telegram_id, $employee->name, $password, $fileName);
 
-            return redirect()->route('payroll.upload')->with('success', 'File uploaded successfully!');
+            // kembalikan last upload id supaya HR bisa langsung download .enc
+            return redirect()->route('payroll.upload')
+                ->with('success', 'File uploaded successfully!')
+                ->with('last_upload_id', $created->id);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Upload failed: ' . $e->getMessage());
         }
@@ -111,7 +116,28 @@ class PayrollController extends Controller
     public function download($id)
     {
         $payroll = Payroll::findOrFail($id);
-        return Storage::download($payroll->encrypted_file_path);
+        $user = auth()->user();
+
+        // Allow if admin, hr, file owner, or uploader
+        $canDownload = false;
+        if ($user->isAdmin() || $user->isHR()) {
+            $canDownload = true;
+        } elseif ($payroll->user_id && $payroll->user_id === $user->id) {
+            $canDownload = true;
+        } elseif ($payroll->uploader_id && $payroll->uploader_id === $user->id) {
+            $canDownload = true;
+        }
+
+        if (! $canDownload) {
+            abort(403, 'Unauthorized to download this file.');
+        }
+
+        $path = $payroll->encrypted_file_path;
+        if (! Storage::exists($path)) {
+            abort(404, 'File not found.');
+        }
+
+        return Storage::download($path, basename($path));
     }
 
     public function data()

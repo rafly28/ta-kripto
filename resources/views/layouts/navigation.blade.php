@@ -11,8 +11,7 @@
                         </svg>
                     </div>
                     <div>
-                        <span class="text-xl font-bold">Kripto</span>
-                        <p class="text-xs text-blue-200">{{ Auth::user()->isAdmin() ? '👑 Admin' : '👤 User' }}</p>
+                        <span class="text-xl font-bold">Terakorp</span>
                     </div>
                 </div>
                 <button @click="open = !open" class="p-1.5 hover:bg-blue-700 rounded-lg transition">
@@ -54,18 +53,7 @@
                         </svg>
                         <span :class="{'block': open, 'hidden': !open}" class="font-medium">Upload Payroll</span>
                     </a>
-
-                    <!-- Data Analytics -->
-                    <a href="{{ route('admin.analytics') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.analytics') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
-                        <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Analytics</span>
-                    </a>
                 @elseif(Auth::user()->isHR())
-                    <div class="pt-4 mt-4 border-t border-blue-600">
-                        <p :class="{'block': open, 'hidden': !open}" class="text-blue-300 text-xs font-semibold uppercase px-4 mb-3">HR Functions</p>
-                    </div>
 
                     <!-- Employee Management -->
                     <a href="{{ route('employee.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('employee.*') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
@@ -82,23 +70,24 @@
                         </svg>
                         <span :class="{'block': open, 'hidden': !open}" class="font-medium">Upload Payroll</span>
                     </a>
-
-                    <!-- HR Analytics -->
-                    <a href="{{ route('hr.analytics') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('hr.analytics') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
+                    <!-- Decrypt Files -->
+                    <a href="{{ route('payroll.decrypt') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('payroll.decrypt') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
                         <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                         </svg>
-                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Analytics</span>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">Decrypt Files</span>
+                    </a>
+                    <!-- My Payroll (User Personal) -->
+                    <a href="{{ route('payroll.my-files') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('payroll.my-files') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
+                        <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                        </svg>
+                        <span :class="{'block': open, 'hidden': !open}" class="font-medium">My Files</span>
                     </a>
                 @endif
 
                 <!-- USER MENU (Decrypt & Personal Data) -->
                 @if(Auth::user()->isUser() || Auth::user()->isAdmin())
-                    <!-- User Functions Divider -->
-                    <div class="pt-4 mt-4 border-t border-blue-600">
-                        <p :class="{'block': open, 'hidden': !open}" class="text-blue-300 text-xs font-semibold uppercase px-4 mb-3">My Files</p>
-                    </div>
-
                     <!-- Decrypt Files -->
                     <a href="{{ route('payroll.decrypt') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('payroll.decrypt') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
                         <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,18 +104,6 @@
                         <span :class="{'block': open, 'hidden': !open}" class="font-medium">My Files</span>
                     </a>
                 @endif
-
-                <!-- Profile (Semua User) -->
-                <div class="pt-4 mt-4 border-t border-blue-600">
-                    <p :class="{'block': open, 'hidden': !open}" class="text-blue-300 text-xs font-semibold uppercase px-4 mb-3">Account</p>
-                </div>
-
-                <a href="{{ route('profile.edit') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('profile.edit') ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700' }} transition">
-                    <svg class="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span :class="{'block': open, 'hidden': !open}" class="font-medium">Profile</span>
-                </a>
             </nav>
 
             <!-- User Info & Logout -->

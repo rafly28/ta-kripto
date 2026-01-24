@@ -2,7 +2,7 @@
     <div class="py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">📤 Upload Payroll File</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Upload Payroll File</h2>
 
             <div class="bg-white rounded-lg shadow p-6">
                 <form action="{{ route('payroll.store') }}" method="POST" enctype="multipart/form-data">
@@ -14,7 +14,7 @@
                         <select name="employee_id" id="employee_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="loadEmployeeInfo()">
                             <option value="">-- Choose Employee --</option>
                             @foreach($employees as $emp)
-                            <option value="{{ $emp->id }}" data-telegram="{{ $emp->telegram_id }}" data-department="{{ $emp->department }}" data-position="{{ $emp->position }}">
+                            <option value="{{ $emp->id }}" data-telegram="{{ $emp->telegram_id }}" data-department="{{ $emp->department }}" data-position="{{ $emp->position }}" data-email="{{ $emp->email }}">
                                 {{ $emp->name }} ({{ $emp->department }})
                             </option>
                             @endforeach
@@ -23,7 +23,7 @@
                     </div>
 
                     <!-- Employee Info (Auto-filled) -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                         <div>
                             <p class="text-gray-600 text-xs font-semibold uppercase">Telegram ID</p>
                             <p id="telegram_info" class="text-lg font-bold text-gray-900 mt-1">-</p>
@@ -35,6 +35,10 @@
                         <div>
                             <p class="text-gray-600 text-xs font-semibold uppercase">Position</p>
                             <p id="position_info" class="text-lg font-bold text-gray-900 mt-1">-</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-xs font-semibold uppercase">Email</p>
+                            <p id="email_info" class="text-lg font-bold text-gray-900 mt-1">-</p>
                         </div>
                     </div>
 
@@ -56,14 +60,42 @@
                     <!-- Buttons -->
                     <div class="flex gap-3">
                         <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition">
-                            ✅ Upload
+                            Upload
                         </button>
                         <a href="{{ route('dashboard') }}" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition text-center">
-                            ❌ Cancel
+                            Cancel
                         </a>
                     </div>
                 </form>
             </div>
+
+            <!-- Success / last upload card (serasi dengan UI lain) -->
+            @if(session('last_upload_id'))
+                @php $uploaded = \App\Models\Payroll::find(session('last_upload_id')); @endphp
+                <div class="mt-6 bg-white rounded-lg shadow p-5 border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-green-700">Upload berhasil</p>
+                            <p class="text-gray-700 text-sm mt-1">
+                                {{ $uploaded ? $uploaded->employee_name : 'File terenkripsi siap diunduh' }}
+                            </p>
+                            @if($uploaded)
+                                <p class="text-xs text-gray-500 mt-1">File: <span class="font-medium">{{ basename($uploaded->encrypted_file_path) }}</span></p>
+                            @endif
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if($uploaded)
+                                <a href="{{ route('payroll.download', $uploaded->id) }}" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md text-sm hover:bg-gray-900">
+                                    ⤓ Download .enc
+                                </a>
+                            @endif
+                            <a href="{{ route('payroll.upload') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-800 rounded-md text-sm hover:bg-gray-200">
+                                OK
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
         </div>
     </div>
@@ -73,9 +105,10 @@
             const select = document.getElementById('employee_id');
             const selected = select.options[select.selectedIndex];
             
-            document.getElementById('telegram_info').textContent = selected.dataset.telegram || '-';
-            document.getElementById('department_info').textContent = selected.dataset.department || '-';
-            document.getElementById('position_info').textContent = selected.dataset.position || '-';
+            document.getElementById('telegram_info').textContent = selected?.dataset?.telegram || '-';
+            document.getElementById('department_info').textContent = selected?.dataset?.department || '-';
+            document.getElementById('position_info').textContent = selected?.dataset?.position || '-';
+            document.getElementById('email_info').textContent = selected?.dataset?.email || '-';
         }
 
         document.getElementById('file').addEventListener('change', function(e) {

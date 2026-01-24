@@ -5,7 +5,7 @@
             <!-- Welcome Section -->
             <div class="mb-6">
                 <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-6 text-white">
-                    <h1 class="text-2xl font-bold mb-1">Welcome back, {{ Auth::user()->name }}!</h1>
+                    <h1 class="text-2xl font-bold mb-1">Welcome, {{ Auth::user()->name }}!</h1>
                     <p class="text-blue-100 text-sm">Secure File Encryption System</p>
                 </div>
             </div>
@@ -51,46 +51,15 @@
                 @endif
             </div>
 
-            <!-- Quick Actions -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <!-- Admin Actions -->
-                @if(Auth::user()->isAdmin())
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">⚙️ Admin Actions</h3>
-                    <div class="space-y-3">
-                        <a href="{{ route('payroll.upload') }}" class="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
-                            📤 Upload New File
-                        </a>
-                        <a href="{{ route('admin.analytics') }}" class="block bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
-                            📊 View Analytics
-                        </a>
-                    </div>
-                </div>
-                @endif
 
-                <!-- User Actions -->
-                @if(Auth::user()->isUser() || Auth::user()->isAdmin())
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📁 My Files</h3>
-                    <div class="space-y-3">
-                        <a href="{{ route('payroll.decrypt') }}" class="block bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
-                            🔓 Decrypt File
-                        </a>
-                        <a href="{{ route('payroll.my-files') }}" class="block bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
-                            📋 My Payroll Files
-                        </a>
-                    </div>
-                </div>
-                @endif
-            </div>
 
             <!-- Recent Files Table -->
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     @if(Auth::user()->isAdmin())
-                        📑 Files I Uploaded
+                        Files I Uploaded
                     @else
-                        📑 My Files
+                        My Files
                     @endif
                 </h3>
                 
