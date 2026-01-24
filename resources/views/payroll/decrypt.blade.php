@@ -35,7 +35,7 @@
                             
                             <!-- File Upload -->
                             <div>
-                                <label for="file_enc" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <label for="file" class="block text-sm font-semibold text-gray-700 mb-2">
                                     Select Encrypted File (.enc)
                                 </label>
                                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition">
@@ -44,20 +44,20 @@
                                     </svg>
                                     <input 
                                         type="file" 
-                                        id="file_enc"
-                                        name="file_enc" 
+                                        id="file"
+                                        name="file" 
                                         class="hidden" 
                                         accept=".enc"
                                         required
                                         onchange="document.getElementById('file-name').textContent = this.files[0].name"
                                     >
-                                    <label for="file_enc" class="cursor-pointer">
+                                    <label for="file" class="cursor-pointer">
                                         <p class="text-gray-600 font-medium">Click to upload or drag and drop</p>
                                         <p class="text-sm text-gray-500">.enc encrypted files only</p>
                                     </label>
                                     <p id="file-name" class="text-sm text-green-600 mt-2"></p>
                                 </div>
-                                @error('file_enc')
+                                @error('file')
                                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                                 @enderror
                             </div>

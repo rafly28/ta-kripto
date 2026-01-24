@@ -11,18 +11,24 @@ class Payroll extends Model
 
     protected $fillable = [
         'user_id',
-        'employee_name',
+        'employee_id',
         'telegram_id',
         'encrypted_file_path',
         'dynamic_pass',
         'waktu_enkripsi',
         'ukuran_asli',
         'ukuran_enkripsi',
+        'periode',
+        'bulan',
     ];
 
     // Relationship
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    public function employee()
+    {
+        return $this->belongsTo(\App\Models\Employee::class);
     }
 }

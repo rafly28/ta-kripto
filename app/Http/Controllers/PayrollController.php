@@ -27,14 +27,25 @@ class PayrollController extends Controller
 
     public function store(Request $request)
     {
+        \Log::info('Payroll upload: masuk ke method store', $request->all());
+
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'file' => 'required|file|max:10240',
         ]);
 
         try {
+            \Log::info('Payroll upload: validasi sukses');
+
             $employee = \App\Models\Employee::find($request->employee_id);
+            if (!$employee) {
+                \Log::error('Payroll upload: employee tidak ditemukan', ['employee_id' => $request->employee_id]);
+                throw new \Exception('Employee not found');
+            }
+
             $file = $request->file('file');
+            \Log::info('Payroll upload: file ditemukan', ['file' => $file->getClientOriginalName()]);
+
             $plainContent = file_get_contents($file->getRealPath());
             $password = Str::random(12);
 
@@ -44,30 +55,37 @@ class PayrollController extends Controller
             $endTime = microtime(true);
             $waktuEnkripsi = ($endTime - $startTime) * 1000;
 
-            $fileName = time() . '_' . str_replace(' ', '_', $employee->name) . '.' . $file->getClientOriginalExtension() . '.enc';
+            $periode = date('Y');
+            $bulan = date('m');
+            $namaKaryawan = str_replace(' ', '_', $employee->name);
+            $ext = $file->getClientOriginalExtension();
+            $fileName = "{$periode}-{$bulan}-{$namaKaryawan}.{$ext}.enc";
+
+            \Log::info('Payroll upload: siap simpan file', ['fileName' => $fileName]);
+
             Storage::put('payrolls/' . $fileName, $encryptedContent);
             $ukuranEnkripsi = Storage::size('payrolls/' . $fileName);
 
-            // simpan dan ambil model yang dibuat
             $created = Payroll::create([
-                'user_id' => $employee->user_id,
-                'employee_name' => $employee->name,
-                'telegram_id' => $employee->telegram_id,
+                'employee_id' => $request->employee_id, // pastikan ini ada
                 'encrypted_file_path' => 'payrolls/' . $fileName,
+                'periode' => $periode,
+                'bulan' => $bulan,
                 'dynamic_pass' => hash('sha256', $password),
                 'waktu_enkripsi' => $waktuEnkripsi,
                 'ukuran_asli' => strlen($plainContent),
                 'ukuran_enkripsi' => $ukuranEnkripsi,
-                'uploader_id' => auth()->id(),
             ]);
+
+            \Log::info('Payroll upload: payroll berhasil dibuat', ['payroll_id' => $created->id]);
 
             $this->sendToTelegram($employee->telegram_id, $employee->name, $password, $fileName);
 
-            // kembalikan last upload id supaya HR bisa langsung download .enc
             return redirect()->route('payroll.upload')
                 ->with('success', 'File uploaded successfully!')
                 ->with('last_upload_id', $created->id);
         } catch (\Exception $e) {
+            \Log::error('Payroll upload: gagal', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Upload failed: ' . $e->getMessage());
         }
     }
@@ -146,6 +164,17 @@ class PayrollController extends Controller
         return response()->json($payrolls);
     }
 
+    public function myFiles()
+    {
+        $user = auth()->user();
+
+        $payrolls = \App\Models\Payroll::whereHas('employee', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->orderBy('created_at', 'desc')->get();
+
+        return view('payroll.my-files', compact('payrolls'));
+    }
+
     public function decryptForm()
     {
         return view('payroll.decrypt');
@@ -154,41 +183,47 @@ class PayrollController extends Controller
     public function decryptProcess(Request $request)
     {
         $request->validate([
-            'file_enc' => 'required|file',
+            'file' => 'required|file',
             'password' => 'required|string'
         ]);
 
-        try {
-            $content = file_get_contents($request->file('file_enc')->getRealPath());
-            $decrypted = $this->aes->decrypt($content, $request->password);
+        $user = auth()->user();
+        $uploadedFile = $request->file('file');
+        $uploadedName = $uploadedFile->getClientOriginalName();
 
-            if ($decrypted === false) {
-                return back()->with('error', 'Password salah atau data rusak!');
-            }
+        $payroll = \App\Models\Payroll::where('encrypted_file_path', 'like', "%{$uploadedName}")->first();
 
-            \Log::info('Payroll decrypted successfully', [
-                'timestamp' => now()
-            ]);
-
-            return response()->streamDownload(function () use ($decrypted) {
-                echo $decrypted;
-            }, 'slip_gaji_asli.pdf', [
-                'Content-Type' => 'application/pdf',
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Decryption error', ['error' => $e->getMessage()]);
-            return back()->with('error', 'Error: ' . $e->getMessage());
+        if (!$payroll) {
+            return back()->with('error', 'File tidak dikenali di sistem.');
         }
-    }
 
-    public function myFiles()
-    {
-        // User hanya bisa lihat file yang di-assign ke dia
-        $payrolls = Payroll::where('user_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->get();
-            
-        return view('payroll.my-files', compact('payrolls'));
+        if ($user->role !== 'hr' && $payroll->user_id !== $user->id) {
+            abort(403, 'Unauthorized');
+        }
+
+        $content = file_get_contents($uploadedFile->getRealPath());
+        $decrypted = $this->aes->decrypt($content, $request->password);
+
+        if ($decrypted === false || empty($decrypted)) {
+            return back()->with('error', 'Password salah atau file rusak!');
+        }
+
+        // Nama file hasil dekripsi = nama file asli payroll (tanpa .enc)
+        $originalName = preg_replace('/\.enc$/', '', basename($payroll->encrypted_file_path));
+
+        // Pastikan header sesuai file asli (misal PDF, XLSX, dsb)
+        $mime = 'application/octet-stream';
+        if (Str::endsWith($originalName, '.pdf')) {
+            $mime = 'application/pdf';
+        } elseif (Str::endsWith($originalName, '.xlsx')) {
+            $mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        }
+
+        return response()->streamDownload(function () use ($decrypted) {
+            echo $decrypted;
+        }, $originalName, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'attachment; filename="'.$originalName.'"',
+        ]);
     }
 }

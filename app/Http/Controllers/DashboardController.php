@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payroll;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -10,41 +11,42 @@ class DashboardController extends Controller
     // Dashboard Simple untuk semua user
     public function index()
     {
-        // Stats based on role
-        if (auth()->user()->isAdmin()) {
-            // ADMIN: Total file yang dia upload
-            $totalPayrolls = Payroll::where('user_id', auth()->id())->count();
-            // Total file untuk semua user
+        $user = auth()->user();
+
+        if ($user->role === 'hr') {
+            // HR: Semua payroll
+            $totalPayrolls = Payroll::count();
             $totalUserFiles = Payroll::count();
-            // Recent files yang admin upload sendiri
-            $dataTable = Payroll::where('user_id', auth()->id())
-                ->orderBy('created_at', 'desc')
-                ->limit(5)
-                ->get();
+            $dataTable = Payroll::with('employee')->orderBy('created_at', 'desc')->limit(5)->get();
         } else {
-            // USER: Total file yang di-assign ke dia
-            $totalPayrolls = Payroll::where('user_id', auth()->id())->count();
-            // Tidak perlu totalUserFiles untuk user
-            $totalUserFiles = null;
-            // Recent files milik user
-            $dataTable = Payroll::where('user_id', auth()->id())
-                ->orderBy('created_at', 'desc')
-                ->limit(5)
-                ->get();
+            // USER: Payroll milik sendiri (via employee)
+            $employee = Employee::where('user_id', $user->id)->first();
+            if ($employee) {
+                $totalPayrolls = Payroll::where('employee_id', $employee->id)->count();
+                $totalUserFiles = $totalPayrolls;
+                $dataTable = Payroll::with('employee')
+                    ->where('employee_id', $employee->id)
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+            } else {
+                $totalPayrolls = 0;
+                $totalUserFiles = 0;
+                $dataTable = collect();
+            }
         }
 
-        // Count total employees (dari unique employee_name)
-        $totalEmployees = Payroll::distinct('employee_name')->count();
+        // Total employees
+        $totalEmployees = Employee::count();
 
         return view('dashboard', compact(
             'totalPayrolls', 'totalUserFiles', 'totalEmployees', 'dataTable'
         ));
     }
 
-    // Dashboard Analytics lengkap untuk ADMIN ONLY
+    // Dashboard Analytics lengkap untuk HR
     public function analytics()
     {
-        // Summary Statistics
         $totalPayrolls = Payroll::count();
         $totalSizeAsli = Payroll::sum('ukuran_asli') ?? 0;
         $totalSizeEnkripsi = Payroll::sum('ukuran_enkripsi') ?? 0;
@@ -57,50 +59,58 @@ class DashboardController extends Controller
         $overheadPercent = ($totalSizeAsli > 0) ? ($overheadBytes / $totalSizeAsli) * 100 : 0;
 
         // Chart Data
-        $payrolls = Payroll::orderBy('created_at')->get();
-        $chartLabels = $payrolls->map(fn($p) => $p->employee_name)->toArray();
-        $chartData = $payrolls->pluck('waktu_enkripsi')->toArray();
-        $chartSizeData = $payrolls->pluck('ukuran_asli')->map(fn($s) => $s / 1024 / 1024)->toArray();
+        $payrolls = Payroll::with('employee')->orderBy('created_at')->get();
+        $chartLabels = $payrolls->map(fn($p) => $p->employee->name ?? '')->toArray();
 
-        // Size Categories
-        $sizeCategories = [
-            'Small (<500KB)' => Payroll::where('ukuran_asli', '<', 500000)->count(),
-            'Medium (500KB-2MB)' => Payroll::whereBetween('ukuran_asli', [500000, 2000000])->count(),
-            'Large (>2MB)' => Payroll::where('ukuran_asli', '>', 2000000)->count(),
-        ];
-
-        // Data Table (Last 5 files yang DI-UPLOAD OLEH ADMIN INI)
-        $dataTable = Payroll::where('user_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        return view('admin.analytics', compact(
-            'totalPayrolls', 'totalSizeAsli', 'totalSizeEnkripsi', 'avgWaktuEnkripsi',
-            'maxWaktuEnkripsi', 'minWaktuEnkripsi', 'overheadBytes', 'overheadPercent',
-            'chartLabels', 'chartData', 'chartSizeData', 
-            'sizeCategories', 'dataTable'
+        return view('dashboard-analytics', compact(
+            'totalPayrolls',
+            'totalSizeAsli',
+            'totalSizeEnkripsi',
+            'avgWaktuEnkripsi',
+            'maxWaktuEnkripsi',
+            'minWaktuEnkripsi',
+            'overheadBytes',
+            'overheadPercent',
+            'chartLabels',
+            'payrolls'
         ));
     }
 
     public function exportCsv()
     {
-        $payrolls = Payroll::all();
+        $payrolls = Payroll::with('employee')->get();
 
-        $csv = "Employee Name,Telegram ID,Ukuran Asli (KB),Ukuran Enkripsi (KB),Waktu Enkripsi (ms),Overhead (%),Created At\n";
+        $csvHeader = [
+            'ID', 'Employee Name', 'Periode', 'Bulan', 'File', 'Ukuran Asli', 'Ukuran Enkripsi', 'Waktu Enkripsi', 'Created At'
+        ];
 
-        foreach ($payrolls as $payroll) {
-            $overhead = $payroll->ukuran_asli > 0 ? (($payroll->ukuran_enkripsi - $payroll->ukuran_asli) / $payroll->ukuran_asli) * 100 : 0;
-            $csv .= "\"{$payroll->employee_name}\",\"{$payroll->telegram_id}\"," 
-                . round($payroll->ukuran_asli / 1024, 2) . "," 
-                . round($payroll->ukuran_enkripsi / 1024, 2) . "," 
-                . round($payroll->waktu_enkripsi, 4) . "," 
-                . round($overhead, 2) . "," 
-                . $payroll->created_at->format('Y-m-d H:i:s') . "\n";
+        $rows = [];
+        foreach ($payrolls as $p) {
+            $rows[] = [
+                $p->id,
+                $p->employee->name ?? '',
+                $p->periode,
+                $p->bulan,
+                $p->encrypted_file_path,
+                $p->ukuran_asli,
+                $p->ukuran_enkripsi,
+                $p->waktu_enkripsi,
+                $p->created_at,
+            ];
         }
 
-        return response()->streamDownload(function () use ($csv) {
-            echo $csv;
-        }, 'payroll_encryption_data_' . now()->format('Y-m-d_His') . '.csv');
+        $filename = 'payrolls_' . now()->format('Ymd_His') . '.csv';
+        $handle = fopen('php://memory', 'r+');
+        fputcsv($handle, $csvHeader);
+        foreach ($rows as $row) {
+            fputcsv($handle, $row);
+        }
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csv)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 }

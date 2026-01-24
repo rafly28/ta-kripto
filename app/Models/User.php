@@ -57,15 +57,9 @@ class User extends Authenticatable
         return $this->role === 'hr';
     }
 
-    public function isEmployee()
-    {
-        return $this->role === 'employee';
-    }
-
-    // Alias untuk isEmployee (biar kompatibel dengan kode lama)
     public function isUser()
     {
-        return $this->role === 'employee';
+        return $this->role === 'user';
     }
 
     // Relationship dengan Payroll

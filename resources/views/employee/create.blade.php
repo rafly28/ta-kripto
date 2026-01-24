@@ -44,6 +44,13 @@
                         @error('email') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-semibold text-gray-900 mb-2">Password *</label>
+                        <input type="password" name="password" id="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        @error('password') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <!-- Buttons -->
                     <div class="flex gap-3">
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition">

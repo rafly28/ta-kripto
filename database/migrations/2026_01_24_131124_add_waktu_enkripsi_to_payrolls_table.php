@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('payrolls', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade')->after('id');
+            $table->float('waktu_enkripsi')->nullable();
+            $table->bigInteger('ukuran_asli')->nullable();
+            $table->bigInteger('ukuran_enkripsi')->nullable();
         });
     }
 
@@ -22,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('payrolls', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
+            $table->dropColumn(['waktu_enkripsi', 'ukuran_asli', 'ukuran_enkripsi']);
         });
     }
 };

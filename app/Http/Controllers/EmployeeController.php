@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends Controller
 {
@@ -25,37 +26,34 @@ class EmployeeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:employees',
-            'email' => 'required|email|unique:employees',
-            'telegram_id' => 'required|string|max:50|unique:employees',
+            'name' => 'required|string|max:255',
+            'telegram_id' => 'required|string|max:100',
             'department' => 'required|string|max:100',
             'position' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email|unique:employees,email',
+            'password' => 'required|string|min:6',
         ]);
 
-        $employee = Employee::create($validated);
+        // 1. Buat user baru
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'user',
+            'email_verified_at' => now(),
+        ]);
 
-        // Link or create User account for employee
-        $user = User::where('email', $validated['email'])->first();
-        if (! $user) {
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => bcrypt('password'), // minta ubah password lewat profile
-                'role' => 'employee',
-                'telegram_id' => $validated['telegram_id'] ?? null,
-                'email_verified_at' => now(),
-            ]);
-        } else {
-            // ensure telegram_id present
-            if (empty($user->telegram_id) && ! empty($validated['telegram_id'])) {
-                $user->update(['telegram_id' => $validated['telegram_id']]);
-            }
-        }
+        // 2. Buat employee dan link ke user
+        Employee::create([
+            'user_id' => $user->id,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'telegram_id' => $validated['telegram_id'],
+            'department' => $validated['department'],
+            'position' => $validated['position'],
+        ]);
 
-        $employee->user_id = $user->id;
-        $employee->save();
-
-        return redirect()->route('employee.index')->with('success', 'Employee added successfully!');
+        return redirect()->route('employee.index')->with('success', 'Employee & user registered!');
     }
 
     // Form edit karyawan
@@ -105,7 +103,7 @@ class EmployeeController extends Controller
                     'name' => $validated['name'],
                     'email' => $validated['email'],
                     'password' => bcrypt('password'),
-                    'role' => 'employee',
+                    'role' => 'user', // gunakan 'user' atau 'hr' sesuai kebutuhan
                     'telegram_id' => $validated['telegram_id'] ?? null,
                     'email_verified_at' => now(),
                 ]);
